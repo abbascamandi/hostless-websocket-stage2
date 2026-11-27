@@ -22,8 +22,8 @@ RUN chmod 0755 /usr/local/bin/start.sh \
     && chmod 0755 /usr/local/bin/aether /usr/local/bin/xray
 
 ENV AETHER_SOCKS=127.0.0.1:1819 \
-    AETHER_CONFIG=/data/aether.toml \
-    AETHER_MASQUE_CONFIG=/data/aether-masque.toml \
+    AETHER_CONFIG=/tmp/aether.toml \
+    AETHER_MASQUE_CONFIG=/tmp/aether-masque.toml \
     AETHER_SCAN=balanced \
     AETHER_NOIZE=balanced \
     XRAY_LOCAL_PORT=10000 \

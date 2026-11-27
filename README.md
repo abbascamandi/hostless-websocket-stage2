@@ -3,6 +3,7 @@
 This stage combines the Aether WARP client, Xray-core and a small HTTP/WebSocket
 front gateway in **one Docker container**. Keeping them in one container is
 intentional: Xray sends traffic to Aether's SOCKS5 listener over `127.0.0.1`.
+This package uses Hostless temporary storage only and does not require a paid disk.
 
 The public side is a VLESS inbound transported by WebSocket. Hostless terminates
 public HTTPS/TLS and forwards the HTTP/WebSocket request to this app. Xray's
@@ -15,12 +16,13 @@ listens only on `127.0.0.1:1819`. Neither internal port is exposed publicly.
    it does not consume the free plan's shared CPU/RAM allowance.
 2. Keep the Stage 2 App and its public Hostless hostname; this repository can
    replace the Stage 2 WebSocket echo-test code.
-3. Attach a persistent Hostless disk to this App at the exact mount path `/data`.
-   A 1 GiB disk is sufficient for the Aether identity/config files. Check the
-   price shown by Hostless before creating/attaching it.
-4. Keep one App replica. The container intentionally refuses to start if `/data`
-   is not mounted, preventing accidental creation of a new WARP identity on each
-   redeploy.
+3. Select **No disk**. This disposable test stores Aether identity/config files
+   under `/tmp`, which Hostless provides as writable temporary storage. No paid
+   volume is required.
+4. Keep one App replica. Aether identity files are lost when the app process
+   starts again, so avoid unnecessary restarts/redeploys while testing. After a
+   restart, Aether may register a new WARP device and Cloudflare may rate-limit
+   repeated registrations. This mode is for short-lived testing, not persistence.
 
 ## Files
 
@@ -41,7 +43,7 @@ listens only on `127.0.0.1:1819`. Neither internal port is exposed publicly.
 - Start command: `/usr/local/bin/start.sh`
 - Replicas: `1`
 - Health check: HTTP `GET /healthz` (also declared in `hostless.yaml`)
-- Storage: persistent disk mounted at `/data`
+- Storage: **No disk** (temporary `/tmp` mode)
 - Do not set/override Hostless's `PORT`; it is provided by Hostless.
 
 If the app was created in Stage 2, update its Git repository to these files and
@@ -63,8 +65,8 @@ files, or paste them into public chats/screenshots. Do not reuse the Stage 2
 The app sets these defaults internally:
 
 - Aether SOCKS5: `127.0.0.1:1819`
-- Aether persistent config: `/data/aether.toml`
-- Aether MASQUE config: `/data/aether-masque.toml`
+- Aether temporary config: `/tmp/aether.toml`
+- Aether temporary MASQUE config: `/tmp/aether-masque.toml`
 - Xray internal listener: `127.0.0.1:10000`
 - Xray outbound: SOCKS5 `127.0.0.1:1819`
 

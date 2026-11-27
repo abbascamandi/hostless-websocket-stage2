@@ -8,22 +8,20 @@ set -eu
 
 export PORT="${PORT:-8080}"
 export AETHER_SOCKS="${AETHER_SOCKS:-127.0.0.1:1819}"
-export AETHER_CONFIG="${AETHER_CONFIG:-/data/aether.toml}"
-export AETHER_MASQUE_CONFIG="${AETHER_MASQUE_CONFIG:-/data/aether-masque.toml}"
+export AETHER_CONFIG="${AETHER_CONFIG:-/tmp/aether.toml}"
+export AETHER_MASQUE_CONFIG="${AETHER_MASQUE_CONFIG:-/tmp/aether-masque.toml}"
 export XRAY_LOCAL_PORT="${XRAY_LOCAL_PORT:-10000}"
 export XRAY_CONFIG_FILE="${XRAY_CONFIG_FILE:-/tmp/xray-config.json}"
 
-# Refuse to start without the persistent disk. Otherwise a redeploy could register
-# a fresh WARP identity each time and eventually trigger Cloudflare rate limits.
-if ! awk '$2 == "/data" { found = 1 } END { exit !found }' /proc/mounts; then
-  echo '[stage-3] ERROR: no persistent Hostless disk is mounted at /data.' >&2
-  echo '[stage-3] Attach a disk to this App with mount path /data, then redeploy.' >&2
+# This is a disposable test deployment: Aether identity/config files are stored
+# in Hostless's writable temporary filesystem. They are lost when the app process
+# starts again, so avoid unnecessary restarts or redeploys during testing.
+mkdir -p /tmp
+if [ ! -w /tmp ]; then
+  echo '[stage-3] ERROR: /tmp is not writable.' >&2
   exit 1
 fi
-if [ ! -w /data ]; then
-  echo '[stage-3] ERROR: /data is not writable.' >&2
-  exit 1
-fi
+echo '[stage-3] Temporary mode: Aether identity is stored under /tmp (not persistent).'
 
 rm -f /tmp/aether-ready /tmp/xray-ready
 
